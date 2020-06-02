@@ -1,0 +1,6 @@
+com.smartmobilevision.scann3d.tools.deviceinfo.property.DeviceInfoMemInfoPropertyProvider
+com.smartmobilevision.scann3d.tools.deviceinfo.property.DeviceInfoCPUInfoPropertyProvider
+com.smartmobilevision.scann3d.tools.deviceinfo.property.DeviceInfoDeviceTypePropertyProvider
+com.smartmobilevision.scann3d.tools.deviceinfo.property.DeviceInfoKernelVersionPropertyProvider
+com.smartmobilevision.scann3d.tools.deviceinfo.property.DeviceInfoMountInfoPropertyProvider
+com.smartmobilevision.scann3d.tools.deviceinfo.property.DeviceInfoOSPropertyProvider

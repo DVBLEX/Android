@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<!--
+	This file is part of the Take Away Java Toolkit for Eschewing Exhausting Keystrokes,
+	henceforth referred to as TAJTEEK.
+	
+	Copyright 2011,2012,2013,2014 András Dudás
+	
+	TAJTEEK is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	TAJTEEK is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	NU Lesser Public License for more details.
+	
+	You should have received a copy of the GNU Lesser Public License
+	along with TAJTEEK.  If not, see <http://www.gnu.org/licenses/>.
+-->	
+<!--
+	Various targets and macros thought to be useful for at least a few cases.
+	
+	More info at: cortexvoice.com
+
+	@author Dudás "dna" András
+-->
+<project name="utility" basedir="." default="...">
+	<taskdef resource="net/sf/antcontrib/antlib.xml"/>
+	
+	<!--
+		This macro can create the following types of jars:
+		Monolithic:
+		Your application is to be bundled as a single jar file, with all SLC providers.
+		Single:
+		You provide a jar file containing SLC providers, without packing the SLC declarations.
+	-->
+	<macrodef name="jarsign">
+		<attribute name="alias" default=""/> 	<!-- At alias to sign with -->
+        	<sequential>
+			<input	
+	  		message="Alias:"
+	  		addproperty="authority"
+	  	/>
+	  	<input
+	  		message="Keystore password:"
+	  		addproperty="keystorePassword"
+	  	>
+	  		<handler type="secure"/>
+	  	</input>
+	  	<input
+	  		message="${authority} authority password:"
+	  		addproperty="authorityPassword"
+	  	>
+	  		<handler type="secure"/>
+	  	</input>
+	  	
+		<signjar 
+			destDir="jar" 
+			alias="@{alias}" 
+			storepass="${keystorePassword}" 
+			keypass="${authorityPassword}" 
+			preservelastmodified="true"
+		>
+			
+		<path>
+			<fileset dir="jar" includes="**/*.jar" />
+		</path>
+		
+		</signjar>
+		</sequential>
+	</macrodef>
+	
+	<target name="acquire-global-revision" >
+		<exec executable="svnversion" outputproperty="svn.revision"/>
+		<echo>${svn.revision}</echo>
+	</target>
+	
+	<!-- Perhaps less useful, but more time saving macros and targets follow -->
+	
+	<macrodef name="tu-compile">
+		<attribute name="classdir" default="classes"/>
+		<attribute name="srcdir" default="src"/>
+		<attribute name="libraries" default="resources/libraries"/>
+		<attribute name="debuglevel" default="lines,vars,source"/>
+		<element name="compilerargs" optional="true"/>
+		<element name="filesets" optional="true"/>
+		<sequential>
+			<tempfile property="release-services-temp-dir" destdir="${java.io.tmpdir}/@{tempsalt}"/>
+			<mkdir dir="@{classdir}"/>
+			<mkdir dir="${release-services-temp-dir}"/>
+			<depend srcdir="@{srcdir}" destdir="@{classdir}" cache="${release-services-temp-dir}" closure="yes"/>
+			<javac srcdir="@{srcdir}" destdir="@{classdir}" debug="on" debuglevel="@{debuglevel}" includeAntRuntime="false">
+			<classpath>
+				<fileset dir="@{libraries}">
+					<include name="**/*.jar"/>
+				</fileset>
+				<filesets/>
+			</classpath>
+			<compilerargs/>
+			</javac>
+		</sequential>
+	</macrodef>
+</project>
+
+

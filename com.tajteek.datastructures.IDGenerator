@@ -1,0 +1,3 @@
+com.tajteek.datastructures.idgenerators.IntegerIDGenerator
+com.tajteek.datastructures.idgenerators.LongIDGenerator
+com.tajteek.datastructures.idgenerators.StringIDGenerator

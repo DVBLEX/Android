@@ -1,0 +1,20 @@
+<PrimaryTestSpecification>
+	<Arguments/>
+	<TestName>DummyTest5</TestName>
+	<Dependencies class="list">
+		<DependencyTestSpecification>
+			<TestName>DummyTest1</TestName>
+			<Arguments/>
+		</DependencyTestSpecification>
+		<DependencyTestSpecification>
+			<TestName>DummyTest4</TestName>
+			<Arguments>
+				<entry>
+					<string>DummyArgName2</string>
+					<string>DummyArgVal2</string>
+				</entry>
+			</Arguments>
+		</DependencyTestSpecification>
+	</Dependencies>
+</PrimaryTestSpecification>
+

@@ -1,0 +1,10 @@
+<PrimaryTestSpecification>
+	<Arguments>
+		<entry>
+			<string>DummyParamName</string>
+			<string>DummyParamValue</string>
+		</entry>
+	</Arguments>
+        <TestName>DummyTest3</TestName>
+        <Dependencies class="list" />
+</PrimaryTestSpecification>

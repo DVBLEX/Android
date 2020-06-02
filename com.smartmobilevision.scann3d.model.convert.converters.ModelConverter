@@ -1,0 +1,3 @@
+com.smartmobilevision.scann3d.model.convert.converters.CopyModelConverter
+com.smartmobilevision.scann3d.model.convert.converters.PCLModelConverter
+com.smartmobilevision.scann3d.model.convert.converters.VTKModelConverter

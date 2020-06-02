@@ -1,0 +1,202 @@
+<?xml version="1.0"?>
+<!--
+	This file is part of the Take Away Java Toolkit for Eschewing Exhausting Keystrokes,
+	henceforth referred to as TAJTEEK.
+	 
+	Copyright 2011-2015 András Dudás
+	
+	TAJTEEK is free software: you can redistribute it and/or modify
+	it under the terms of the GNU Lesser Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+	
+	TAJTEEK is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU Lesser Public License for more details.
+	
+	You should have received a copy of the GNU Lesser Public License
+	along with TAJTEEK.  If not, see <http://www.gnu.org/licenses/>.
+-->	
+<!--
+
+	Global build script to be used in most SLC pattern using projects.
+	SLC patterns are defined in TAJTEEK.
+	SLC through refers to the Service Loadable Component pattern, a type of Inversion Of Control (IOC).
+	SLC implementations are provided by various resources, most often jar files external to the project.
+	The expected functionality is composited from these SLC implementations, and the main application jar,
+	containing the SLC definitions.
+	
+	More info at: cortexvoice.com
+
+	@author Dudás "dna" András
+-->
+<project name="slc-common" basedir="." default="...">
+	<taskdef resource="net/sf/antcontrib/antlib.xml"/>
+
+        <!--
+        	This macro can create the following types of jars:
+        	Monolithic:
+        		Your application is to be bundled as a single jar file, with all SLC providers.
+        	Single:
+        		You provide a jar file containing SLC providers, without packing the SLC declarations.
+        -->
+        <macrodef name="release-slc-jar">
+        	<attribute name="libs" default="" 		description="The libraries to include, full path to jar files."/>
+        	<attribute name="entry" default="" 		description="The fully qualified name of the entry (main) class"/>
+        	<attribute name="slcdefsource" default=""	description="The full path of the jar file to be considered the SLC def source."/>
+        	<attribute name="jardir" default="jar"/>
+        	<attribute name="classesdir" default="classes" description="The directory from which to take all classes. If set to empty, no classes are used from anywhere."/>
+        	<attribute name="libdir" default="resources/libraries"/>
+        	<attribute name="autoslcdir" default="TAJTEEK"/>
+        	<attribute name="autoslcjar" default="TAJTEEK.jar"/>
+        	<attribute name="autoslcFQCN" default="com.tajteek.toolkit.AutoSLC"/>
+        	<attribute name="toolkitdir" default="../../Tools/"/>
+        	<attribute name="finaljar" default="${ant.project.name}.jar"/>
+        	<attribute name="tempsalt" default="${ant.project.name}" description="The name of the directory in which all temporary directories and files are going to be created."/>
+        	<attribute name="MANIFESTOverrideFile" default="DEFAULT_EXTREMAL" />
+        	<attribute name="ziptool" default="NONE" description="The path of an executable capable of merging zip files, overriding files if multiple are present. Should take arguments: TARGET-JAR Jar1[;Jar2;Jar3;..]" />
+        	<attribute name="useSLCDefSource" default="false" description="Use the SLC definition source as the base jar, and do not make a new one on each run." />
+		<attribute name="compressionlevel" default="0" description="Zip (and jar) compression level (0-9)."/>
+        	<element name="services" optional="true"/>
+        	<element name="additionalIncludes" optional="true"/>
+        	<sequential>
+        		<!-- Unused yet 
+			<macrodef name="alllibs">
+			<attribute name="inlibs" default="@{libs}"/>
+			<sequential>
+				<for list="@{libs}" param="lib">
+					<sequential>
+						<zipfileset src="@{lib}" />
+					</sequential>
+				</for>
+			</sequential>
+			</macrodef>
+			-->
+			
+			<if>
+				<equals arg1="@{useSLCDefSource}" arg2="false"/>
+				<then>
+					<if>
+						<equals arg1="@{classesdir}" arg2=""/>
+						<then>
+							<echo message="Generating mock initial jar, class use disabled."/>
+							<!--
+								Bug workaround: neither "zipmerge" or "AutoSLC" recognize Ant 
+								generated empty zip files as actual zip files.
+								Instead, a jar is created with the actual jar target.
+								Leaving this here to remind it does not work, as of Ant 1.8.3.
+								<zip destfile="@{jardir}/@{finaljar}"
+									basedir=""
+									excludes="**/*"
+									whenempty="create"
+								/>
+							-->
+							<jar destfile="@{jardir}/@{finaljar}" update="true" excludes="**/*" level="@{compressionlevel}"/>
+						</then>
+						<else>
+							<echo message="Generating new base jar from '@{classesdir}' and additionalIncludes elements."/>
+							<zip update="true" destfile="@{jardir}/@{finaljar}" excludes="*.svn" level="@{compressionlevel}">
+								<fileset dir="@{classesdir}" includes="**/*.class"/>
+								<additionalIncludes/>
+							</zip>
+						</else>
+					</if>
+				</then>
+				<else>
+					<echo message="Attempting to re-use @{slcdefsource} as base jar."/>
+					<available file="@{slcdefsource}" property="SLCDefSourceExists"/>
+					<fail unless="SLCDefSourceExists" message="@{slcdefsource} is not present!"/>
+					<copy file="@{slcdefsource}" tofile="@{jardir}/@{finaljar}"/>
+				</else>
+			</if>
+			
+			
+			<!-- 
+				A little bit of  hidden specialization opportunity.
+			-->
+			<available file="@{ziptool}" property="@{ziptool}-customZipPresent"/>
+			
+			<if>
+				<equals arg1="${@{ziptool}-customZipPresent}" arg2="true" />
+				<then>
+					<echo message="Using custom solution to merge libraries."/>
+					<exec executable="@{ziptool}">					
+						<arg value="@{jardir}/@{finaljar}"/>
+						<arg value="@{libs}"/>
+					</exec>
+				</then>
+				<else>
+				<echo message="Using default Ant zip library to merge libraries."/>
+					<for list="@{libs}" param="lib" delimiter=";">
+						<sequential>
+							<echo>Adding library: @{lib}</echo>
+							<zip destfile="@{jardir}/@{finaljar}" update="true" level="@{compressionlevel}">
+								<zipfileset src="@{lib}" erroronmissingarchive="true"/>
+							</zip>
+						</sequential>
+					</for>
+				</else>
+			</if>
+	
+			<echo>Searching for SLC providers.</echo>
+			<available file="@{toolkitdir}/@{autoslcdir}/@{autoslcjar}" property="ToolsPresent"/>
+			<fail unless="ToolsPresent" message="@{toolkitdir}/@{autoslcdir}/@{autoslcjar} is not present!"/>
+			
+			<tempfile property="release-services-temp-dir" destdir="${java.io.tmpdir}/@{tempsalt}" />
+			<property name="tempdir" value="${release-services-temp-dir}"/>
+			<mkdir dir="${tempdir}"/> <!-- Will output blatant lies about actual directory position."-->
+			
+			<echo>@{finaljar} and @{slcdefsource} </echo> 
+			<!-- PermGen space will be rapidly exhauseted by loading many classes -->
+			<java classname="@{autoslcFQCN}" fork="true">
+				<arg line="${tempdir} @{jardir}/@{finaljar} @{slcdefsource}"/>
+				<classpath>
+					<pathelement location="@{toolkitdir}/@{autoslcdir}/@{autoslcjar}"/>
+					<pathelement path="${java.class.path}"/>
+				</classpath>
+				 <jvmarg value="-XX:MaxPermSize=128M"/>
+			</java>
+			
+			<echo>Adding SLC providers.</echo>
+			
+			<!-- Override the manifest, if one is provided -->
+			<if>
+				<equals arg1="@{MANIFESTOverrideFile}" arg2="DEFAULT_EXTREMAL" />
+				<then>
+					<!-- No override needed -->
+					<jar destfile="@{jardir}/@{finaljar}" update="true" level="@{compressionlevel}">
+						<zipfileset dir="${tempdir}/services" prefix="META-INF/services/"/>
+						<manifest>
+							<attribute name="Main-Class" value="@{entry}"/>
+							<attribute name="Built-By" value="${user.name}"/>
+							<attribute name="Implementation-Vendor" value="${user.name}"/>
+							<attribute name="Implementation-Title" value="${ant.project.name}"/>
+							<attribute name="Implementation-Version" value="1.0"/>
+						</manifest>
+					</jar>
+				</then>
+				<else>
+					<available file="@{MANIFESTOverrideFile}" property="MANIFESTOverride"/>
+					<if>
+						<equals arg1="${MANIFESTOverride}" arg2="true" />				
+						<then>
+							<echo message="Manifest override with: @{MANIFESTOverrideFile}"/>
+							<zip destfile="@{jardir}/@{finaljar}" update="true" level="@{compressionlevel}">
+								<zipfileset file="@{MANIFESTOverrideFile}" prefix="META-INF/"/>
+								<zipfileset dir="${tempdir}/services" prefix="META-INF/services/"/>
+							</zip>
+						</then>
+					</if>
+				</else>
+			</if>
+			
+			<echo>Deleting temporary service directory.</echo>
+			<delete verbose="false" includeemptydirs="true">
+				<fileset dir="${tempdir}"/>
+			</delete>
+		</sequential>
+        </macrodef>
+</project>
+
+
